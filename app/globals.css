@@ -1,0 +1,205 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   Aktobe Premium — design tokens
+   Значения и обоснование зафиксированы в DESIGN.md.
+   Контрасты просчитаны: ink 15.19:1, muted 7.06:1, acc 3.12:1 к фону.
+   --------------------------------------------------------------- */
+
+@theme {
+  /* Surfaces */
+  --color-bg: #0b0c0b;
+  --color-surface: #131614;
+  --color-raised: #1b201d;
+  --color-line: #262a27;
+
+  /* Ink */
+  --color-ink: #e8e2d6;
+  --color-muted: #9a9c95;
+
+  /* Accent — гоночный зелёный.
+     acc     — контролы (CTA, активный таб): текст на нём 4.87:1, к фону 3.12:1
+     acc-hi  — hover-состояние acc
+     acc-deep— ТОЛЬКО крупные заливки секций, к фону 1.61:1, контролом быть не может
+     acc-pale— акцентный текст и иконки, 8.53:1 */
+  --color-acc: #2e6b52;
+  --color-acc-hi: #35785c;
+  --color-acc-deep: #0f3d2e;
+  --color-acc-pale: #8fb3a2;
+
+  /* Typography */
+  --font-display: var(--font-unbounded), system-ui, sans-serif;
+  --font-body: var(--font-golos), system-ui, sans-serif;
+
+  /* Radii — потолок 4px, см. DESIGN.md */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+
+  /* Easing */
+  --ease-out-quint: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Именованная z-шкала — произвольные 999 запрещены */
+:root {
+  --z-sticky: 100;
+  --z-float: 200;
+  --z-menu-backdrop: 300;
+  --z-menu: 310;
+  --z-modal: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-bg);
+  /* Плавный скролл ведёт Lenis; нативный оставлен как фолбэк для no-JS и reduced-motion */
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+button,
+a,
+label[for],
+select,
+summary {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-acc-pale);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* Цифры в характеристиках и ценах не должны прыгать по ширине */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility container-page {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1360px;
+  padding-inline: clamp(1.25rem, 4vw, 4rem);
+}
+
+@utility section-y {
+  padding-block: clamp(5rem, 10vw, 9rem);
+}
+
+/* Вход hero.
+   Намеренно на CSS, а не на JS: базовое состояние разметки — видимое,
+   анимация лишь проигрывается поверх. Если JS не отработал, текст на месте.
+   --d задаёт ступень stagger на конкретном элементе. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1.25rem, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.rise {
+  animation: rise-in 0.65s var(--ease-out-quint) both;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Проявление секций на скролле, целиком на CSS.
+   Сделано через scroll-driven animation, а не через whileInView: у JS-подхода
+   начальное состояние opacity:0 попадает в серверную разметку, и если гидратация
+   не отработала, секция остаётся пустой. Здесь при отсутствии поддержки
+   animation-timeline просто ничего не анимируется, а контент виден всегда. */
+@keyframes rise-only {
+  from {
+    transform: translate3d(0, 1.75rem, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Только сдвиг, без прозрачности. У scroll-driven анимации кадр «from»
+       держится, пока элемент не вошёл в диапазон, поэтому opacity:0 оставлял бы
+       всё ниже экрана невидимым: при рендере страницы целиком, на печати и в
+       любом инструменте, который снимает её одним кадром. Сдвиг такого эффекта
+       не даёт, текст читается всегда. */
+    .reveal {
+      animation: rise-only linear both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 30%;
+    }
+
+    /* Ступень внутри одного списка: каждый следующий элемент вступает чуть позже.
+       Диапазон сдвигается, а не задержка, потому что таймлайн здесь скролл. */
+    .reveal-step-1 {
+      animation-range: entry 10% cover 32%;
+    }
+    .reveal-step-2 {
+      animation-range: entry 14% cover 36%;
+    }
+    .reveal-step-3 {
+      animation-range: entry 18% cover 40%;
+    }
+  }
+}
+
+/* Reduced motion — это меньше перемещений, а не полное отсутствие анимации.
+   Смену состояния показать надо, иначе интерфейс выглядит сломанным:
+   поэтому перемещение заменяется проявлением, а переходы просто укорачиваются.
+   Lenis и scroll-сцены GSAP при этой настройке не инициализируются вовсе. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .rise {
+    animation: fade-in 0.2s ease both;
+    animation-delay: var(--d, 0s);
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.15s !important;
+    scroll-behavior: auto !important;
+  }
+}
